@@ -1,0 +1,3 @@
+[submodule "contrib/jsts"]
+	path = contrib/jsts
+	url = git@github.com:bjornharrtell/jsts.git
