@@ -19,21 +19,38 @@ L.PolylineOffset = {
   offsetPoints: function(pts, offset) {
     var offsetPolyline,
         ls = new jsts.geom.LineString(this.pointsToJSTSCoordinates(pts));
+
     if (offset != 0) {
       // Parameters which describe how a buffer should be constructed
       var bufferParameters = new jsts.operation.buffer.BufferParameters();
 
       // Sets whether the computed buffer should be single-sided
       bufferParameters.setSingleSided(true);
-      var buffer = jsts.operation.buffer.BufferOp.bufferOp2(ls, offset, bufferParameters);
 
-      offsetPolyline = buffer.shell.difference(ls);
+      var precisionModel = new jsts.geom.PrecisionModel();
+      var offsetCurveBuilder = new jsts.operation.buffer.OffsetCurveBuilder(precisionModel, bufferParameters);
+
+      var offsetCurve = offsetCurveBuilder.getOffsetCurve(ls.points, offset);
+      var offsetBuffer = jsts.operation.buffer.BufferOp.bufferOp2(ls, offset, bufferParameters);
+
+      var offsetPointsList = [];
+      for (var i=0, l=offsetCurve.length; i<l; i++) {
+        var offsetCurveNode = new jsts.geom.Point(offsetCurve[i]);
+        if (offsetBuffer.touches(offsetCurveNode)) {
+          var offsetPoint = offsetCurve[i];
+          if (!(isNaN(offsetPoint.x) || isNaN(offsetPoint.y))) {
+            offsetPointsList.push(offsetPoint);
+          }
+        }
+      }
+
+      offsetPolyline = offsetPointsList;
 
     } else {
-      var offsetPolyline = ls;
+      offsetPolyline = ls.points;
     }
 
-    return this.JSTSCoordinatesToPoints(offsetPolyline.points);
+    return this.JSTSCoordinatesToPoints(offsetPolyline);
   }
 
 }
